@@ -62,7 +62,7 @@ services:
             - broker1
             - schema-registry
         volumes:
-            - ./docker/connect/plugins:/connect-plugins
+            - ./docker/connect:/connect
             - ./spooldir:/spooldir
         ports:
             - 8083:8083
@@ -95,7 +95,7 @@ services:
             /bin/sh -c "apk --update-cache add \
                     bash \
                     curl \
-                && chmod 755 /connect/spooldir/add.sh \
+                && chmod 755 /connect/spooldir/add_mockaroo.sh \
                     /connect/datagen/add_stock_trades.sh \
                     /connect/add_connector.sh \
                 && if [ ! -d /spooldir/in ]; then mkdir /spooldir/in; fi \
