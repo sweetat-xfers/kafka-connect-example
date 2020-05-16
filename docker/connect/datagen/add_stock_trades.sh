@@ -1,11 +1,6 @@
-#!/bin/bash
+#!/bin/bash -x
 
-if [ ! -f docker/connect/datagen/stock_trades.config ]; then
-  echo "Wrong directory.  Pls run in the main project directory"
-fi
+CONNECTOR_NAME=datagen-stocktrades
+CONFIG_FILE=/connect/datagen/stock_trades.config
 
-## This is for the datagen to generate insane numbers of data for testing
-curl -X POST \
-  -H "Content-Type: application/json" \
-  --data @docker/connect/datagen/stock_trades.config \
-  http://localhost:8083/connectors
+/connect/add_connector.sh ${CONNECTOR_NAME} ${CONFIG_FILE}

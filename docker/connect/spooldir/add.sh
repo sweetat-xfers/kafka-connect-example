@@ -1,11 +1,6 @@
-#!/bin/bash
+#!/bin/bash -x
 
-if [ ! -f docker/connect/spooldir/mockaroo.config ]; then
-  echo "Wrong directory.  Pls run in the main project directory"
-fi
+CONNECTOR_NAME=mockaroo
+CONFIG_FILE=/connect/spooldir/mockaroo.config
 
-## This is for the datagen to generate insane numbers of data for testing
-curl -X POST \
-  -H "Content-Type: application/json" \
-  --data @docker/connect/spooldir/mockaroo.config \
-  http://localhost:8083/connectors
+/connect/add_connector.sh ${CONNECTOR_NAME} ${CONFIG_FILE}
