@@ -1,52 +1,40 @@
 {
-  "namespace": "bni",
+  "namespace": "ksql",
   "name": "BankRows",
   "doc": "Defines a hypothetical bank row using some known information about bank_rows.",
   "type": "record",
   "fields": [
     {
-      "name": "side",
-      "doc": "A simulated trade side (buy or sell or short)",
+      "name": "txn_type",
+      "doc": "A simulated bank information type (disburse or topup)",
       "type": {
         "type": "string",
         "arg.properties": {
-          "options": [ "BUY", "SELL"  ]
+          "options": [ "CREDIT", "DEBIT"  ]
         }
       }
     },
     {
-      "name": "quantity",
+      "name": "amt",
       "doc": "A simulated random quantity of the trade",
       "type": {
         "type": "int",
         "arg.properties": {
           "range": {
-            "min": 1,
-            "max": 5000
+            "min": 1000,
+            "max": 10000000
           }
         }
       }
     },
     {
-      "name": "symbol",
-      "doc": "Simulated stock symbols",
+      "name": "timestamp",
+      "doc": "Simulated timestampfor the execution of the transfer",
       "type": {
-        "type": "string",
+        "type": "long",
+        "format_as_time" : "unix_long",
         "arg.properties": {
-          "options": [ "ZBZX", "ZJZZT", "ZTEST", "ZVV", "ZVZZT", "ZWZZT", "ZXZZT" ]
-        }
-      }
-    },
-    {
-      "name": "price",
-      "doc": "A simulated random trade price in pennies",
-      "type": {
-        "type": "int",
-        "arg.properties": {
-          "range": {
-            "min": 5,
-            "max": 1000
-          }
+          "iteration": { "start": 1, "step": 10}
         }
       }
     },
@@ -61,7 +49,7 @@
       }
     },
     {
-      "name": "userid", 
+      "name": "user_id", 
       "doc": "The simulated user who executed the trade",
       "type": {
         "type": "string",
