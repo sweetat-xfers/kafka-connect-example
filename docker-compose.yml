@@ -1,0 +1,91 @@
+version: "3.7"
+services:
+    mysql:
+        image: mysql:5
+        ports:
+            - 3306:3306
+        environment:
+            MYSQL_DATABASE: edatest
+            MYSQL_ROOT_PASSWORD: password
+            MYSQL_USER: xfers
+            MYSQL_PASSWORD: password
+    zookeeper1:
+        image: confluentinc/cp-zookeeper:5.5.0
+        volumes:
+            - ./docker/broker/jmx-exporter:/etc/jmx-exporter
+        ports:
+            - 7061:7061
+            - 2181:2181
+        environment:
+            ZOOKEEPER_SERVER_ID: 1
+            ZOOKEEPER_CLIENT_PORT: 2181
+            ZOOKEEPER_TICK_TIME: 2000
+            KAFKA_JMX_OPTS: -javaagent:/etc/jmx-exporter/jmx_prometheus_javaagent-0.12.0.jar=7061:/etc/jmx-exporter/zookeeper.yaml
+    broker1:
+        image: confluentinc/cp-kafka:5.5.0
+        volumes:
+            - ./docker/broker/jmx-exporter:/etc/jmx-exporter
+        depends_on:
+            - zookeeper1
+            # - zookeeper2
+        ports:
+            - 7071:7071
+            - 9091:9091
+            - 19092:19092
+        environment:
+            KAFKA_BROKER_ID: 1
+            KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181,zookeeper2:2182'
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:9091,PLAINTEXT_HOST://localhost:19092
+            KAFKA_JMX_OPTS: -javaagent:/etc/jmx-exporter/jmx_prometheus_javaagent-0.12.0.jar=7071:/etc/jmx-exporter/kafka-2_0_0.yml
+            CONFLUENT_METRICS_ENABLE: "false"
+            # Set this only if there is only one broker running
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    schema-registry:
+        image: confluentinc/cp-schema-registry:5.5.0
+        depends_on:
+            - zookeeper1
+            - broker1
+        ports:
+            - 6000:6000
+        environment:
+            SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka1:9091
+            SCHEMA_REGISTRY_HOST_NAME: schema-registry
+            SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper1:2181
+            SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:6000
+    connect:
+        image: localhost/kafka-connect-demo:0.0.1
+        build:
+            context: .
+            dockerfile: docker/connect/Dockerfile
+        depends_on:
+            - zookeeper1
+            - broker1
+            - schema-registry
+        volumes:
+            - ./connect-plugins:/connect-plugins
+            - ./spooldir:/spooldir
+        ports:
+            - 8083:8083
+        environment:
+            CONNECT_BOOTSTRAP_SERVERS: broker1:9091
+            CONNECT_REST_ADVERTISED_HOST_NAME: connect
+            CONNECT_REST_PORT: 8083
+            CONNECT_GROUP_ID: compose-connect-group
+            CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
+            CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+            CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+            CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
+            CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+            CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+            CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+            CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+            CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+            # CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+            # CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:6000
+            CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+            CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+            CONNECT_ZOOKEEPER_CONNECT: zookeeper1:2181
+            CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+volumes:
+    my-node_modules:
