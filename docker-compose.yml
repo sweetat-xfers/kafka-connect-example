@@ -27,14 +27,13 @@ services:
             - ./docker/broker/jmx-exporter:/etc/jmx-exporter
         depends_on:
             - zookeeper1
-            # - zookeeper2
         ports:
             - 7071:7071
             - 9091:9091
             - 19092:19092
         environment:
             KAFKA_BROKER_ID: 1
-            KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181,zookeeper2:2182'
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
             KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
             KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:9091,PLAINTEXT_HOST://localhost:19092
             KAFKA_JMX_OPTS: -javaagent:/etc/jmx-exporter/jmx_prometheus_javaagent-0.12.0.jar=7071:/etc/jmx-exporter/kafka-2_0_0.yml
@@ -49,7 +48,7 @@ services:
         ports:
             - 6000:6000
         environment:
-            SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka1:9091
+            SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker1:9091
             SCHEMA_REGISTRY_HOST_NAME: schema-registry
             SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper1:2181
             SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:6000
@@ -63,7 +62,7 @@ services:
             - broker1
             - schema-registry
         volumes:
-            - ./connect-plugins:/connect-plugins
+            - ./docker/connect/plugins:/connect-plugins
             - ./spooldir:/spooldir
         ports:
             - 8083:8083
@@ -80,12 +79,27 @@ services:
             CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
             CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
             CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
-            CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
-            # CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-            # CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:6000
+            # CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+            CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+            CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:6000
             CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
             CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
             CONNECT_ZOOKEEPER_CONNECT: zookeeper1:2181
             CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
-volumes:
-    my-node_modules:
+    connect-scripts:
+        image: alpine:latest
+        volumes:
+            - ./docker/connect:/connect
+            - ./spooldir:/spooldir
+        command: >
+            /bin/sh -c "apk --update-cache add \
+                    bash \
+                    curl \
+                && chmod 755 /connect/spooldir/add.sh \
+                    /connect/datagen/add_stock_trades.sh \
+                    /connect/add_connector.sh \
+                && if [ ! -d /spooldir/in ]; then mkdir /spooldir/in; fi \
+                && if [ ! -d /spooldir/error ]; then mkdir /spooldir/error; fi \
+                && if [ ! -d /spooldir/finished ]; then mkdir /spooldir/finished; fi \
+                && /bin/bash /connect/spooldir/add_mockaroo.sh \
+                && /bin/bash /connect/datagen/add_stock_trades.sh"
