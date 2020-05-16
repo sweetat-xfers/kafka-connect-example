@@ -68,5 +68,13 @@ To replicate the desired deployment parameters, all parameters used by the appli
 
 * Avro schema is obviously better than json convertor if you want to optimize the size of the payload in kafka.
   * AvroConvertors require that you use schema-registry
-  * JSONConvertors will by default emit schema alongside the JSON payload, as described in [Kafka Connect Deep Dive – Converters and Serialization Explained](https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/)
+
+* JSONConvertors will by default emit schema alongside the JSON payload, as described in [Kafka Connect Deep Dive – Converters and Serialization Explained](https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/)
   * You can disable the transport of the schema by setting ```"value.converter.schemas.enable": "false"```
+
+* When using AvroConvertor for datagen to produce random data, you need to specify the avro schema using 
+
+```text
+"schema.filename": "/path/to/your_schema.avsc",
+"schema.keyfield": "<field representing the key>",
+```
