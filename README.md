@@ -18,6 +18,12 @@ kstreams and ksql.
 One of the features kafka provides is the connect functionality which allows you
 to treat various external systems as either sources or sinks
 
+## Getting Started
+
+```bash
+docker-compose up
+```
+
 ## References
 
 I had to reference many documents before finally getting something I have here working.
@@ -30,6 +36,7 @@ I had to reference many documents before finally getting something I have here w
     1. [Examples](https://github.com/confluentinc/kafka-connect-datagen/tree/master/src/main/resources)
 6. [JDBC Connector (Source and Sink) for Confluent Platform](https://docs.confluent.io/current/connect/kafka-connect-jdbc/index.html)
 7. [Kafka Connect Deep Dive – JDBC Source Connector](https://www.confluent.io/blog/kafka-connect-deep-dive-jdbc-source-connector/)
+8. [JDBC Sink Connector for Confluent Platform](https://docs.confluent.io/current/connect/kafka-connect-jdbc/sink-connector/index.html)
 
 ## Technical
 
